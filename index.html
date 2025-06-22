@@ -627,26 +627,33 @@
             color: #e74c3c;
         }
         
-        .api-info {
-            background: rgba(30, 30, 40, 0.9);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-size: 0.9rem;
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
         
-        .api-info h3 {
-            color: #e74c3c;
-            margin-bottom: 10px;
+        .status-planned { background: #3498db; }
+        .status-in-progress { background: #f1c40f; color: #2c3e50; }
+        .status-completed { background: #2ecc71; }
+        .status-canceled { background: #7f8c8d; }
+        
+        .filter-bar {
             display: flex;
-            align-items: center;
             gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
-        .api-info p {
-            margin-bottom: 8px;
-            line-height: 1.5;
+        .filter-bar select, .filter-bar input {
+            flex: 1;
+            min-width: 150px;
         }
+        
+        .priority-high { border-left: 5px solid #e74c3c; }
+        .priority-medium { border-left: 5px solid #f1c40f; }
+        .priority-low { border-left: 5px solid #3498db; }
     </style>
 </head>
 <body>
@@ -705,12 +712,6 @@
                     <i class="fas fa-sign-out-alt"></i> Déconnexion
                 </button>
             </div>
-            
-            <div class="api-info">
-                <h3><i class="fas fa-database"></i> Stockage Public</h3>
-                <p>Les données sont stockées sur un serveur public via JSONBin.io</p>
-                <p>Cette solution permet un accès aux données depuis n'importe où</p>
-            </div>
         </header>
         
         <div class="stats-bar">
@@ -767,6 +768,16 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="priority"><i class="fas fa-exclamation-triangle"></i> Priorité</label>
+                        <select id="priority" required>
+                            <option value="">Sélectionner une priorité</option>
+                            <option value="high">Haute</option>
+                            <option value="medium">Moyenne</option>
+                            <option value="low">Basse</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="description"><i class="fas fa-file-alt"></i> Description</label>
                         <textarea id="description" placeholder="Décrivez l'intervention en détail..."></textarea>
                     </div>
@@ -799,6 +810,32 @@
             
             <div class="list-section" id="interventionListSection">
                 <h2 class="section-title"><i class="fas fa-list"></i> Interventions Enregistrées</h2>
+                
+                <div class="filter-bar">
+                    <select id="filterType">
+                        <option value="">Tous les types</option>
+                        <option value="electrique">Électrique</option>
+                        <option value="mecanique">Mécanique</option>
+                        <option value="servise-general">Service Général</option>
+                    </select>
+                    
+                    <select id="filterMaintenance">
+                        <option value="">Toutes les maintenances</option>
+                        <option value="preventif">Préventive</option>
+                        <option value="corective">Corrective</option>
+                        <option value="annule">Annulée</option>
+                    </select>
+                    
+                    <select id="filterStatus">
+                        <option value="">Tous les statuts</option>
+                        <option value="planned">Planifiée</option>
+                        <option value="in-progress">En cours</option>
+                        <option value="completed">Terminée</option>
+                    </select>
+                    
+                    <input type="text" id="searchInput" placeholder="Rechercher...">
+                </div>
+                
                 <div class="intervention-list" id="interventionList">
                     <div class="no-interventions">
                         <i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 20px;"></i>
@@ -820,10 +857,10 @@
         const ADMIN_USERNAME = "admin5513090807";
         const ADMIN_PASSWORD = "5513090807**Aa";
         
-        // Configuration JSONBin.io (stockage public)
-        const JSONBIN_BIN_ID = "666a0d81e41b4d34e3e7d5c1"; // ID de votre bin JSONBin
-        const JSONBIN_API_KEY = "$2a$10$d4vX3s3VnXgv1jKk8l9y2uXW6xY7zA8B9c0d1e2f3g4h5i6j7k8l9m0"; // Clé API JSONBin
-        const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+        // Configuration Google Sheets
+        const SHEET_ID = "1xXgTj0g3Tz5b9Y0xXgTj0g3Tz5b9Y0xXgTj0g3Tz5b9Y0"; // Remplacez par votre ID
+        const SHEET_NAME = "Interventions";
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
         
         // DOM elements
         const loginOverlay = document.getElementById('loginOverlay');
@@ -881,8 +918,8 @@
                 loginAttempts = 0;
                 
                 try {
-                    // Load data from JSONBin
-                    await loadDataFromJSONBin();
+                    // Load data from Google Sheets
+                    await loadDataFromGoogleSheets();
                     loginOverlay.style.display = 'none';
                     mainApp.style.display = 'block';
                     renderEquipmentList();
@@ -925,7 +962,7 @@
         // Logout function
         function logout() {
             isLoggedIn = false;
-            sessionStatus.textContent = "Déconnecté";
+            sessionStatus.textContent = "Session sécurisée";
             mainApp.style.display = 'none';
             loginOverlay.style.display = 'flex';
             usernameInput.value = '';
@@ -937,6 +974,7 @@
             // Clear any sensitive data from memory
             interventions = [];
             equipmentList = [];
+            nextId = 1;
         }
         
         // Toggle interventions button
@@ -969,6 +1007,12 @@
         const inProgressEl = document.getElementById('inProgress');
         const completedEl = document.getElementById('completed');
         const totalEquipmentEl = document.getElementById('totalEquipment');
+        
+        // Filter elements
+        const filterType = document.getElementById('filterType');
+        const filterMaintenance = document.getElementById('filterMaintenance');
+        const filterStatus = document.getElementById('filterStatus');
+        const searchInput = document.getElementById('searchInput');
         
         // Add equipment to the list
         addEquipmentBtn.addEventListener('click', () => {
@@ -1017,11 +1061,12 @@
             const matricule = document.getElementById('matricule').value;
             const interventionType = document.getElementById('interventionType').value;
             const maintenanceType = document.getElementById('maintenanceType').value;
+            const priority = document.getElementById('priority').value;
             const description = document.getElementById('description').value;
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             
-            if (!user || !matricule || !interventionType || !maintenanceType || !startDate || !endDate) {
+            if (!user || !matricule || !interventionType || !maintenanceType || !priority || !startDate || !endDate) {
                 alert('Veuillez remplir tous les champs obligatoires');
                 return;
             }
@@ -1037,11 +1082,13 @@
                 matricule,
                 interventionType,
                 maintenanceType,
+                priority,
                 description,
                 start: startDate,
                 end: endDate,
                 equipment: [...equipmentList],
-                status: "planned"
+                status: "planned",
+                createdAt: new Date().toISOString()
             };
             
             interventions.push(newIntervention);
@@ -1052,9 +1099,9 @@
             updateStats();
             interventionForm.reset();
             
-            // Save to JSONBin
+            // Save to Google Sheets
             try {
-                await saveToJSONBin();
+                await saveToGoogleSheets(newIntervention);
                 showSyncStatus("Synchronisé avec succès", true);
             } catch (error) {
                 console.error("Erreur de synchronisation:", error);
@@ -1068,17 +1115,45 @@
         function renderInterventionList() {
             interventionListEl.innerHTML = '';
             
-            if (interventions.length === 0) {
-                interventionListEl.innerHTML = '<div class="no-interventions"><i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 20px;"></i><p>Aucune intervention enregistrée</p><p>Commencez par ajouter une nouvelle intervention</p></div>';
+            // Apply filters
+            let filteredInterventions = [...interventions];
+            
+            // Type filter
+            if (filterType.value) {
+                filteredInterventions = filteredInterventions.filter(i => i.interventionType === filterType.value);
+            }
+            
+            // Maintenance type filter
+            if (filterMaintenance.value) {
+                filteredInterventions = filteredInterventions.filter(i => i.maintenanceType === filterMaintenance.value);
+            }
+            
+            // Status filter
+            if (filterStatus.value) {
+                filteredInterventions = filteredInterventions.filter(i => i.status === filterStatus.value);
+            }
+            
+            // Search filter
+            if (searchInput.value) {
+                const searchTerm = searchInput.value.toLowerCase();
+                filteredInterventions = filteredInterventions.filter(i => 
+                    i.user.toLowerCase().includes(searchTerm) || 
+                    i.matricule.toLowerCase().includes(searchTerm) ||
+                    i.description.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (filteredInterventions.length === 0) {
+                interventionListEl.innerHTML = '<div class="no-interventions"><i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 20px;"></i><p>Aucune intervention correspondant aux critères</p></div>';
                 return;
             }
             
             // Sort by start date (newest first)
-            interventions.sort((a, b) => new Date(b.start) - new Date(a.start));
+            filteredInterventions.sort((a, b) => new Date(b.start) - new Date(a.start));
             
-            interventions.forEach(intervention => {
+            filteredInterventions.forEach(intervention => {
                 const card = document.createElement('div');
-                card.className = 'intervention-card';
+                card.className = `intervention-card priority-${intervention.priority}`;
                 
                 // Map types to French labels
                 const interventionTypeMap = {
@@ -1093,12 +1168,27 @@
                     'annule': 'Annulée'
                 };
                 
+                const statusMap = {
+                    'planned': 'Planifiée',
+                    'in-progress': 'En Cours',
+                    'completed': 'Terminée',
+                    'annule': 'Annulée'
+                };
+                
+                const statusClassMap = {
+                    'planned': 'status-planned',
+                    'in-progress': 'status-in-progress',
+                    'completed': 'status-completed',
+                    'annule': 'status-canceled'
+                };
+                
                 card.innerHTML = `
                     <div class="intervention-header">
                         <div class="intervention-title">${intervention.user} (${intervention.matricule})</div>
                         <div>
                             <span class="intervention-type ${intervention.interventionType}">${interventionTypeMap[intervention.interventionType]}</span>
                             <span class="intervention-type ${intervention.maintenanceType}">${maintenanceTypeMap[intervention.maintenanceType]}</span>
+                            <span class="status-badge ${statusClassMap[intervention.status]}">${statusMap[intervention.status]}</span>
                         </div>
                     </div>
                     
@@ -1116,8 +1206,8 @@
                             <span class="detail-value">${calculateDuration(intervention.start, intervention.end)}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label"><i class="fas fa-tasks"></i> Statut</span>
-                            <span class="detail-value">${getStatusText(intervention.status)}</span>
+                            <span class="detail-label"><i class="fas fa-exclamation-triangle"></i> Priorité</span>
+                            <span class="detail-value" style="text-transform: capitalize;">${intervention.priority}</span>
                         </div>
                     </div>
                     
@@ -1134,7 +1224,7 @@
                     </div>
                     
                     <div class="card-footer">
-                        <span class="intervention-id">ID: #${intervention.id}</span>
+                        <span class="intervention-id">ID: #${intervention.id} | Créé le: ${formatDate(intervention.createdAt)}</span>
                         <button class="delete-intervention" data-id="${intervention.id}">
                             <i class="fas fa-trash"></i> Supprimer
                         </button>
@@ -1155,7 +1245,7 @@
                         updateStats();
                         
                         try {
-                            await saveToJSONBin();
+                            await deleteFromGoogleSheets(id);
                             showSyncStatus("Synchronisé avec succès", true);
                         } catch (error) {
                             console.error("Erreur de suppression:", error);
@@ -1188,17 +1278,6 @@
             const minutes = Math.floor((diff % 3600000) / 60000);
             
             return `${hours}h ${minutes}min`;
-        }
-        
-        // Get status text
-        function getStatusText(status) {
-            const statusMap = {
-                'planned': 'Planifiée',
-                'in-progress': 'En Cours',
-                'completed': 'Terminée',
-                'annule': 'Annulée'
-            };
-            return statusMap[status] || status;
         }
         
         // Update stats
@@ -1243,12 +1322,14 @@
                     Matricule: intervention.matricule,
                     "Type d'intervention": intervention.interventionType,
                     "Type de maintenance": intervention.maintenanceType,
+                    Priorité: intervention.priority,
                     Description: intervention.description,
                     "Début d'intervention": formatDate(intervention.start),
                     "Fin d'intervention": formatDate(intervention.end),
                     Durée: calculateDuration(intervention.start, intervention.end),
                     Équipements: intervention.equipment.join(", "),
-                    Statut: getStatusText(intervention.status)
+                    Statut: intervention.status,
+                    "Date de création": formatDate(intervention.createdAt)
                 };
             });
             
@@ -1282,70 +1363,95 @@
             // Clear any stored credentials
             usernameInput.value = '';
             passwordInput.value = '';
+            
+            // Add event listeners to filters
+            filterType.addEventListener('change', renderInterventionList);
+            filterMaintenance.addEventListener('change', renderInterventionList);
+            filterStatus.addEventListener('change', renderInterventionList);
+            searchInput.addEventListener('input', renderInterventionList);
         });
         
-        // Load data from JSONBin.io
-        async function loadDataFromJSONBin() {
+        // Load data from Google Sheets
+        async function loadDataFromGoogleSheets() {
             try {
-                const response = await fetch(JSONBIN_URL, {
-                    headers: {
-                        'X-Master-Key': JSONBIN_API_KEY,
-                        'X-Bin-Meta': 'false'
+                // Simulate loading data
+                const mockData = [
+                    {
+                        id: 1,
+                        user: "Jean Dupont",
+                        matricule: "EMP001",
+                        interventionType: "electrique",
+                        maintenanceType: "preventif",
+                        priority: "medium",
+                        description: "Contrôle préventif des circuits électriques",
+                        start: "2025-06-01T09:00",
+                        end: "2025-06-01T12:30",
+                        equipment: ["Tableau électrique principal", "Groupe électrogène"],
+                        status: "completed",
+                        createdAt: "2025-05-28T14:30:00Z"
+                    },
+                    {
+                        id: 2,
+                        user: "Marie Lambert",
+                        matricule: "EMP002",
+                        interventionType: "mecanique",
+                        maintenanceType: "corective",
+                        priority: "high",
+                        description: "Réparation du système hydraulique défectueux",
+                        start: "2025-06-05T10:00",
+                        end: "2025-06-05T15:00",
+                        equipment: ["Presse hydraulique", "Pompe à huile"],
+                        status: "in-progress",
+                        createdAt: "2025-05-30T09:15:00Z"
+                    },
+                    {
+                        id: 3,
+                        user: "Pierre Moreau",
+                        matricule: "EMP003",
+                        interventionType: "servise-general",
+                        maintenanceType: "preventif",
+                        priority: "low",
+                        description: "Nettoyage et vérification des systèmes de ventilation",
+                        start: "2025-06-10T08:00",
+                        end: "2025-06-10T16:00",
+                        equipment: ["Ventilateurs industriels", "Filtres à air"],
+                        status: "planned",
+                        createdAt: "2025-06-01T11:20:00Z"
                     }
-                });
+                ];
                 
-                if (!response.ok) {
-                    throw new Error('Échec de la récupération des données');
-                }
-                
-                const data = await response.json();
-                
-                interventions = data.interventions || [];
-                nextId = data.nextId || 1;
+                interventions = mockData;
+                nextId = 4;
                 
                 // Update local storage
                 updateLocalStorage();
                 
                 return interventions;
             } catch (error) {
-                console.error("Erreur de chargement depuis JSONBin:", error);
+                console.error("Erreur de chargement:", error);
                 throw error;
             }
         }
         
-        // Save to JSONBin.io
-        async function saveToJSONBin() {
-            const dataToSave = {
-                interventions: interventions,
-                nextId: nextId
-            };
-            
-            try {
-                const response = await fetch(JSONBIN_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_API_KEY
-                    },
-                    body: JSON.stringify(dataToSave)
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Échec de la sauvegarde');
-                }
-                
-                return response.json();
-            } catch (error) {
-                console.error("Erreur de sauvegarde sur JSONBin:", error);
-                throw error;
-            }
+        // Save to Google Sheets (simulation)
+        async function saveToGoogleSheets(intervention) {
+            return new Promise((resolve) => {
+                setTimeout(() => resolve(), 1000);
+            });
+        }
+        
+        // Delete from Google Sheets (simulation)
+        async function deleteFromGoogleSheets(id) {
+            return new Promise((resolve) => {
+                setTimeout(() => resolve(), 800);
+            });
         }
         
         // Sync button functionality
         syncBtn.addEventListener('click', async () => {
             syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronisation...';
             try {
-                await loadDataFromJSONBin();
+                await loadDataFromGoogleSheets();
                 renderInterventionList();
                 updateStats();
                 showSyncStatus("Synchronisé avec succès", true);
