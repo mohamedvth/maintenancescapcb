@@ -481,7 +481,7 @@
             border-top: 1px solid #444;
         }
         
-        .delete-intervention {
+        .delete-intervention, .edit-intervention {
             background: #e74c3c;
             color: white;
             border: none;
@@ -495,8 +495,17 @@
             transition: all 0.3s;
         }
         
+        .edit-intervention {
+            background: #3498db;
+        }
+        
         .delete-intervention:hover {
             background: #c0392b;
+            transform: translateY(-2px);
+        }
+        
+        .edit-intervention:hover {
+            background: #2980b9;
             transform: translateY(-2px);
         }
         
@@ -654,6 +663,20 @@
         .priority-high { border-left: 5px solid #e74c3c; }
         .priority-medium { border-left: 5px solid #f1c40f; }
         .priority-low { border-left: 5px solid #3498db; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        
+        .cancel-btn {
+            background: #7f8c8d !important;
+        }
+        
+        .update-btn {
+            background: linear-gradient(to right, #27ae60, #2ecc71) !important;
+        }
     </style>
 </head>
 <body>
@@ -735,8 +758,10 @@
         
         <div class="main-content">
             <div class="form-section">
-                <h2 class="section-title"><i class="fas fa-tools"></i> Nouvelle Intervention</h2>
+                <h2 class="section-title"><i class="fas fa-tools"></i> <span id="formTitle">Nouvelle Intervention</span></h2>
                 <form id="interventionForm">
+                    <input type="hidden" id="interventionId">
+                    
                     <div class="form-group">
                         <label for="user"><i class="fas fa-user"></i> Utilisateur</label>
                         <input type="text" id="user" required placeholder="Nom de l'utilisateur">
@@ -778,6 +803,16 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="status"><i class="fas fa-tasks"></i> Statut</label>
+                        <select id="status" required>
+                            <option value="planned">Planifiée</option>
+                            <option value="in-progress">En Cours</option>
+                            <option value="completed">Terminée</option>
+                            <option value="annule">Annulée</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="description"><i class="fas fa-file-alt"></i> Description</label>
                         <textarea id="description" placeholder="Décrivez l'intervention en détail..."></textarea>
                     </div>
@@ -804,7 +839,14 @@
                         <p style="text-align: center; color: #95a5a6; padding: 10px;">Aucun équipement ajouté</p>
                     </div>
                     
-                    <button type="submit"><i class="fas fa-save"></i> Enregistrer l'intervention</button>
+                    <div class="action-buttons">
+                        <button type="button" class="cancel-btn" id="cancelEdit" style="display: none;">
+                            <i class="fas fa-times"></i> Annuler
+                        </button>
+                        <button type="submit" id="submitBtn">
+                            <i class="fas fa-save"></i> Enregistrer
+                        </button>
+                    </div>
                 </form>
             </div>
             
@@ -857,11 +899,6 @@
         const ADMIN_USERNAME = "admin5513090807";
         const ADMIN_PASSWORD = "5513090807**Aa";
         
-        // Configuration Google Sheets
-        const SHEET_ID = "1xXgTj0g3Tz5b9Y0xXgTj0g3Tz5b9Y0xXgTj0g3Tz5b9Y0"; // Remplacez par votre ID
-        const SHEET_NAME = "Interventions";
-        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
-        
         // DOM elements
         const loginOverlay = document.getElementById('loginOverlay');
         const mainApp = document.getElementById('mainApp');
@@ -881,6 +918,8 @@
         let isLoggedIn = false;
         let loginAttempts = 0;
         const MAX_LOGIN_ATTEMPTS = 3;
+        let isEditing = false;
+        let currentEditId = null;
         
         // Password visibility toggle
         passwordToggle.addEventListener('click', () => {
@@ -918,8 +957,14 @@
                 loginAttempts = 0;
                 
                 try {
-                    // Load data from Google Sheets
-                    await loadDataFromGoogleSheets();
+                    // Load data from localStorage
+                    const storedData = localStorage.getItem('appData');
+                    if (storedData) {
+                        const parsedData = JSON.parse(storedData);
+                        interventions = parsedData.interventions || [];
+                        nextId = parsedData.nextId || 1;
+                    }
+                    
                     loginOverlay.style.display = 'none';
                     mainApp.style.display = 'block';
                     renderEquipmentList();
@@ -927,13 +972,6 @@
                     updateStats();
                 } catch (error) {
                     console.error("Erreur de chargement:", error);
-                    // Fallback to localStorage if online loading fails
-                    const storedData = localStorage.getItem('appData');
-                    if (storedData) {
-                        const parsedData = JSON.parse(storedData);
-                        interventions = parsedData.interventions || [];
-                        nextId = parsedData.nextId || 1;
-                    }
                     loginOverlay.style.display = 'none';
                     mainApp.style.display = 'block';
                     renderEquipmentList();
@@ -975,6 +1013,7 @@
             interventions = [];
             equipmentList = [];
             nextId = 1;
+            resetForm();
         }
         
         // Toggle interventions button
@@ -1001,6 +1040,10 @@
         const equipmentListEl = document.getElementById('equipmentList');
         const interventionListEl = document.getElementById('interventionList');
         const exportExcelBtn = document.getElementById('exportExcel');
+        const cancelEditBtn = document.getElementById('cancelEdit');
+        const formTitle = document.getElementById('formTitle');
+        const submitBtn = document.getElementById('submitBtn');
+        const interventionIdInput = document.getElementById('interventionId');
         
         // Stats elements
         const totalInterventionsEl = document.getElementById('totalInterventions');
@@ -1062,11 +1105,13 @@
             const interventionType = document.getElementById('interventionType').value;
             const maintenanceType = document.getElementById('maintenanceType').value;
             const priority = document.getElementById('priority').value;
+            const status = document.getElementById('status').value;
             const description = document.getElementById('description').value;
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
+            const id = interventionIdInput.value;
             
-            if (!user || !matricule || !interventionType || !maintenanceType || !priority || !startDate || !endDate) {
+            if (!user || !matricule || !interventionType || !maintenanceType || !priority || !status || !startDate || !endDate) {
                 alert('Veuillez remplir tous les champs obligatoires');
                 return;
             }
@@ -1076,40 +1121,120 @@
                 return;
             }
             
-            const newIntervention = {
-                id: nextId++,
-                user,
-                matricule,
-                interventionType,
-                maintenanceType,
-                priority,
-                description,
-                start: startDate,
-                end: endDate,
-                equipment: [...equipmentList],
-                status: "planned",
-                createdAt: new Date().toISOString()
-            };
+            if (isEditing && id) {
+                // Update existing intervention
+                const index = interventions.findIndex(i => i.id == id);
+                if (index !== -1) {
+                    interventions[index] = {
+                        ...interventions[index],
+                        user,
+                        matricule,
+                        interventionType,
+                        maintenanceType,
+                        priority,
+                        status,
+                        description,
+                        start: startDate,
+                        end: endDate,
+                        equipment: [...equipmentList],
+                        updatedAt: new Date().toISOString()
+                    };
+                    
+                    showSyncStatus("Intervention mise à jour avec succès", true);
+                }
+            } else {
+                // Create new intervention
+                const newIntervention = {
+                    id: nextId++,
+                    user,
+                    matricule,
+                    interventionType,
+                    maintenanceType,
+                    priority,
+                    status,
+                    description,
+                    start: startDate,
+                    end: endDate,
+                    equipment: [...equipmentList],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: null
+                };
+                
+                interventions.push(newIntervention);
+                showSyncStatus("Intervention enregistrée avec succès", true);
+            }
             
-            interventions.push(newIntervention);
             equipmentList = [];
             renderEquipmentList();
             renderInterventionList();
             updateLocalStorage();
             updateStats();
-            interventionForm.reset();
-            
-            // Save to Google Sheets
-            try {
-                await saveToGoogleSheets(newIntervention);
-                showSyncStatus("Synchronisé avec succès", true);
-            } catch (error) {
-                console.error("Erreur de synchronisation:", error);
-                showSyncStatus("Échec de synchronisation", false);
-            }
-            
-            alert('Intervention enregistrée avec succès!');
+            resetForm();
         });
+        
+        // Reset form to initial state
+        function resetForm() {
+            interventionForm.reset();
+            equipmentList = [];
+            renderEquipmentList();
+            isEditing = false;
+            currentEditId = null;
+            formTitle.textContent = "Nouvelle Intervention";
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Enregistrer';
+            cancelEditBtn.style.display = 'none';
+            interventionIdInput.value = '';
+        }
+        
+        // Cancel edit mode
+        cancelEditBtn.addEventListener('click', resetForm);
+        
+        // Edit intervention
+        function editIntervention(id) {
+            const intervention = interventions.find(i => i.id == id);
+            if (!intervention) return;
+            
+            // Fill form with intervention data
+            document.getElementById('user').value = intervention.user;
+            document.getElementById('matricule').value = intervention.matricule;
+            document.getElementById('interventionType').value = intervention.interventionType;
+            document.getElementById('maintenanceType').value = intervention.maintenanceType;
+            document.getElementById('priority').value = intervention.priority;
+            document.getElementById('status').value = intervention.status;
+            document.getElementById('description').value = intervention.description || '';
+            document.getElementById('startDate').value = intervention.start;
+            document.getElementById('endDate').value = intervention.end;
+            interventionIdInput.value = intervention.id;
+            
+            // Set equipment
+            equipmentList = [...intervention.equipment];
+            renderEquipmentList();
+            
+            // Change form to edit mode
+            isEditing = true;
+            currentEditId = id;
+            formTitle.textContent = "Modifier Intervention";
+            submitBtn.innerHTML = '<i class="fas fa-sync"></i> Mettre à jour';
+            cancelEditBtn.style.display = 'block';
+            
+            // Scroll to form
+            document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Delete intervention
+        function deleteIntervention(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette intervention?')) {
+                interventions = interventions.filter(i => i.id !== id);
+                renderInterventionList();
+                updateLocalStorage();
+                updateStats();
+                showSyncStatus("Intervention supprimée avec succès", true);
+                
+                // If we were editing the deleted item, reset form
+                if (isEditing && currentEditId == id) {
+                    resetForm();
+                }
+            }
+        }
         
         // Render intervention list
         function renderInterventionList() {
@@ -1139,7 +1264,8 @@
                 filteredInterventions = filteredInterventions.filter(i => 
                     i.user.toLowerCase().includes(searchTerm) || 
                     i.matricule.toLowerCase().includes(searchTerm) ||
-                    i.description.toLowerCase().includes(searchTerm)
+                    (i.description && i.description.toLowerCase().includes(searchTerm)) ||
+                    i.equipment.some(eq => eq.toLowerCase().includes(searchTerm))
                 );
             }
             
@@ -1224,34 +1350,36 @@
                     </div>
                     
                     <div class="card-footer">
-                        <span class="intervention-id">ID: #${intervention.id} | Créé le: ${formatDate(intervention.createdAt)}</span>
-                        <button class="delete-intervention" data-id="${intervention.id}">
-                            <i class="fas fa-trash"></i> Supprimer
-                        </button>
+                        <span class="intervention-id">
+                            ID: #${intervention.id} 
+                            ${intervention.updatedAt ? `| Mise à jour: ${formatDate(intervention.updatedAt)}` : `| Créé le: ${formatDate(intervention.createdAt)}`}
+                        </span>
+                        <div class="action-buttons">
+                            <button class="edit-intervention" data-id="${intervention.id}">
+                                <i class="fas fa-edit"></i> Modifier
+                            </button>
+                            <button class="delete-intervention" data-id="${intervention.id}">
+                                <i class="fas fa-trash"></i> Supprimer
+                            </button>
+                        </div>
                     </div>
                 `;
                 
                 interventionListEl.appendChild(card);
             });
             
-            // Add event listeners to delete buttons
-            document.querySelectorAll('.delete-intervention').forEach(button => {
-                button.addEventListener('click', async (e) => {
+            // Add event listeners to action buttons
+            document.querySelectorAll('.edit-intervention').forEach(button => {
+                button.addEventListener('click', (e) => {
                     const id = parseInt(e.target.closest('button').dataset.id);
-                    if (confirm('Êtes-vous sûr de vouloir supprimer cette intervention?')) {
-                        interventions = interventions.filter(i => i.id !== id);
-                        renderInterventionList();
-                        updateLocalStorage();
-                        updateStats();
-                        
-                        try {
-                            await deleteFromGoogleSheets(id);
-                            showSyncStatus("Synchronisé avec succès", true);
-                        } catch (error) {
-                            console.error("Erreur de suppression:", error);
-                            showSyncStatus("Échec de synchronisation", false);
-                        }
-                    }
+                    editIntervention(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-intervention').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.closest('button').dataset.id);
+                    deleteIntervention(id);
                 });
             });
         }
@@ -1323,13 +1451,14 @@
                     "Type d'intervention": intervention.interventionType,
                     "Type de maintenance": intervention.maintenanceType,
                     Priorité: intervention.priority,
+                    Statut: intervention.status,
                     Description: intervention.description,
                     "Début d'intervention": formatDate(intervention.start),
                     "Fin d'intervention": formatDate(intervention.end),
                     Durée: calculateDuration(intervention.start, intervention.end),
                     Équipements: intervention.equipment.join(", "),
-                    Statut: intervention.status,
-                    "Date de création": formatDate(intervention.createdAt)
+                    "Date de création": formatDate(intervention.createdAt),
+                    "Dernière mise à jour": intervention.updatedAt ? formatDate(intervention.updatedAt) : ""
                 };
             });
             
@@ -1371,100 +1500,6 @@
             searchInput.addEventListener('input', renderInterventionList);
         });
         
-        // Load data from Google Sheets
-        async function loadDataFromGoogleSheets() {
-            try {
-                // Simulate loading data
-                const mockData = [
-                    {
-                        id: 1,
-                        user: "Jean Dupont",
-                        matricule: "EMP001",
-                        interventionType: "electrique",
-                        maintenanceType: "preventif",
-                        priority: "medium",
-                        description: "Contrôle préventif des circuits électriques",
-                        start: "2025-06-01T09:00",
-                        end: "2025-06-01T12:30",
-                        equipment: ["Tableau électrique principal", "Groupe électrogène"],
-                        status: "completed",
-                        createdAt: "2025-05-28T14:30:00Z"
-                    },
-                    {
-                        id: 2,
-                        user: "Marie Lambert",
-                        matricule: "EMP002",
-                        interventionType: "mecanique",
-                        maintenanceType: "corective",
-                        priority: "high",
-                        description: "Réparation du système hydraulique défectueux",
-                        start: "2025-06-05T10:00",
-                        end: "2025-06-05T15:00",
-                        equipment: ["Presse hydraulique", "Pompe à huile"],
-                        status: "in-progress",
-                        createdAt: "2025-05-30T09:15:00Z"
-                    },
-                    {
-                        id: 3,
-                        user: "Pierre Moreau",
-                        matricule: "EMP003",
-                        interventionType: "servise-general",
-                        maintenanceType: "preventif",
-                        priority: "low",
-                        description: "Nettoyage et vérification des systèmes de ventilation",
-                        start: "2025-06-10T08:00",
-                        end: "2025-06-10T16:00",
-                        equipment: ["Ventilateurs industriels", "Filtres à air"],
-                        status: "planned",
-                        createdAt: "2025-06-01T11:20:00Z"
-                    }
-                ];
-                
-                interventions = mockData;
-                nextId = 4;
-                
-                // Update local storage
-                updateLocalStorage();
-                
-                return interventions;
-            } catch (error) {
-                console.error("Erreur de chargement:", error);
-                throw error;
-            }
-        }
-        
-        // Save to Google Sheets (simulation)
-        async function saveToGoogleSheets(intervention) {
-            return new Promise((resolve) => {
-                setTimeout(() => resolve(), 1000);
-            });
-        }
-        
-        // Delete from Google Sheets (simulation)
-        async function deleteFromGoogleSheets(id) {
-            return new Promise((resolve) => {
-                setTimeout(() => resolve(), 800);
-            });
-        }
-        
-        // Sync button functionality
-        syncBtn.addEventListener('click', async () => {
-            syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronisation...';
-            try {
-                await loadDataFromGoogleSheets();
-                renderInterventionList();
-                updateStats();
-                showSyncStatus("Synchronisé avec succès", true);
-            } catch (error) {
-                console.error("Erreur de synchronisation:", error);
-                showSyncStatus("Échec de synchronisation", false);
-            } finally {
-                setTimeout(() => {
-                    syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Synchroniser';
-                }, 1000);
-            }
-        });
-        
         // Show sync status
         function showSyncStatus(message, isSuccess) {
             // Remove existing status
@@ -1482,6 +1517,23 @@
                 statusEl.remove();
             }, 3000);
         }
+        
+        // Sync button functionality
+        syncBtn.addEventListener('click', async () => {
+            syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronisation...';
+            try {
+                // Simulate synchronization
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                showSyncStatus("Données synchronisées avec succès", true);
+            } catch (error) {
+                console.error("Erreur de synchronisation:", error);
+                showSyncStatus("Échec de synchronisation", false);
+            } finally {
+                setTimeout(() => {
+                    syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Synchroniser';
+                }, 1000);
+            }
+        });
     </script>
 </body>
 </html>
