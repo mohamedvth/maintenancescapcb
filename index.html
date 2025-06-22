@@ -184,6 +184,21 @@
             transition: all 0.3s ease;
         }
         
+        .import-btn {
+            background: linear-gradient(to right, #f39c12, #e67e22);
+            color: white;
+            font-weight: 700;
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
         .toggle-btn {
             background: linear-gradient(to right, #3498db, #2980b9);
             color: white;
@@ -229,13 +244,17 @@
             transition: all 0.3s ease;
         }
         
-        .export-btn:hover, .toggle-btn:hover, .logout-btn:hover, .sync-btn:hover {
+        .export-btn:hover, .import-btn:hover, .toggle-btn:hover, .logout-btn:hover, .sync-btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         
         .export-btn:hover {
             background: linear-gradient(to right, #219653, #27ae60);
+        }
+        
+        .import-btn:hover {
+            background: linear-gradient(to right, #e67e22, #d35400);
         }
         
         .toggle-btn:hover {
@@ -677,6 +696,22 @@
         .update-btn {
             background: linear-gradient(to right, #27ae60, #2ecc71) !important;
         }
+        
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        
+        .file-input-container input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -725,6 +760,12 @@
                 <button class="export-btn" id="exportExcel">
                     <i class="fas fa-file-excel"></i> Exporter vers Excel
                 </button>
+                <div class="file-input-container">
+                    <button class="import-btn" id="importExcelBtn">
+                        <i class="fas fa-file-import"></i> Importer Excel
+                    </button>
+                    <input type="file" id="importExcel" accept=".xlsx, .xls" style="display: none;">
+                </div>
                 <button class="sync-btn" id="syncBtn">
                     <i class="fas fa-sync-alt"></i> Synchroniser
                 </button>
@@ -910,6 +951,8 @@
         const passwordToggle = document.getElementById('passwordToggle');
         const sessionStatus = document.getElementById('sessionStatus');
         const syncBtn = document.getElementById('syncBtn');
+        const importExcelBtn = document.getElementById('importExcelBtn');
+        const importExcelInput = document.getElementById('importExcel');
         
         // Initialize variables
         let interventions = [];
@@ -958,7 +1001,7 @@
                 
                 try {
                     // Load data from localStorage
-                    const storedData = localStorage.getItem('appData');
+                    const storedData = localStorage.getItem('scapcb-data');
                     if (storedData) {
                         const parsedData = JSON.parse(storedData);
                         interventions = parsedData.interventions || [];
@@ -1432,7 +1475,7 @@
                 interventions: interventions,
                 nextId: nextId
             };
-            localStorage.setItem('appData', JSON.stringify(appData));
+            localStorage.setItem('scapcb-data', JSON.stringify(appData));
         }
         
         // Export to Excel functionality
@@ -1471,6 +1514,140 @@
             
             // Export to Excel file
             XLSX.writeFile(workbook, "interventions_maintenance.xlsx");
+        });
+        
+        // Import Excel functionality
+        importExcelBtn.addEventListener('click', () => {
+            importExcelInput.click();
+        });
+        
+        importExcelInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Get first worksheet
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                if (jsonData.length === 0) {
+                    alert("Le fichier Excel est vide ou ne contient pas de données valides");
+                    return;
+                }
+                
+                // Map Excel data to intervention format
+                const importedInterventions = jsonData.map(row => {
+                    // Parse dates from strings
+                    const parseDate = (dateStr) => {
+                        if (!dateStr) return null;
+                        return new Date(dateStr).toISOString();
+                    };
+                    
+                    return {
+                        id: row.ID || nextId++,
+                        user: row.Utilisateur,
+                        matricule: row.Matricule,
+                        interventionType: row["Type d'intervention"],
+                        maintenanceType: row["Type de maintenance"],
+                        priority: row.Priorité,
+                        status: row.Statut,
+                        description: row.Description,
+                        start: parseDate(row["Début d'intervention"]) || new Date().toISOString(),
+                        end: parseDate(row["Fin d'intervention"]) || new Date().toISOString(),
+                        equipment: row.Équipements ? row.Équipements.split(",").map(eq => eq.trim()) : [],
+                        createdAt: parseDate(row["Date de création"]) || new Date().toISOString(),
+                        updatedAt: parseDate(row["Dernière mise à jour"])
+                    };
+                });
+                
+                // Merge with existing interventions
+                interventions = [...interventions, ...importedInterventions];
+                
+                // Update nextId
+                nextId = Math.max(...interventions.map(i => i.id)) + 1;
+                
+                // Update UI and storage
+                renderInterventionList();
+                updateLocalStorage();
+                updateStats();
+                showSyncStatus(`${importedInterventions.length} interventions importées avec succès`, true);
+                
+                // Reset file input
+                importExcelInput.value = '';
+            };
+            
+            reader.readAsArrayBuffer(file);
+        });
+        
+        // Synchronize function
+        syncBtn.addEventListener('click', async () => {
+            syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronisation...';
+            
+            try {
+                // Simulate server synchronization
+                const serverData = localStorage.getItem('scapcb-server-data');
+                
+                if (serverData) {
+                    // Merge server data with local data
+                    const serverInterventions = JSON.parse(serverData);
+                    
+                    // Create a map of interventions by ID for quick lookup
+                    const interventionMap = new Map();
+                    
+                    // Add local interventions to map
+                    interventions.forEach(intervention => {
+                        interventionMap.set(intervention.id, intervention);
+                    });
+                    
+                    // Merge server interventions
+                    serverInterventions.forEach(serverIntervention => {
+                        const localIntervention = interventionMap.get(serverIntervention.id);
+                        
+                        if (!localIntervention) {
+                            // If intervention doesn't exist locally, add it
+                            interventions.push(serverIntervention);
+                        } else {
+                            // If exists, update with the latest version
+                            const localDate = new Date(localIntervention.updatedAt || localIntervention.createdAt);
+                            const serverDate = new Date(serverIntervention.updatedAt || serverIntervention.createdAt);
+                            
+                            if (serverDate > localDate) {
+                                // Server has a newer version, update local
+                                Object.assign(localIntervention, serverIntervention);
+                            }
+                        }
+                    });
+                    
+                    // Update nextId
+                    nextId = Math.max(...interventions.map(i => i.id)) + 1;
+                    
+                    // Update UI and storage
+                    renderInterventionList();
+                    updateLocalStorage();
+                    updateStats();
+                    
+                    // Save merged data to server
+                    localStorage.setItem('scapcb-server-data', JSON.stringify(interventions));
+                    
+                    showSyncStatus(`${serverInterventions.length} interventions synchronisées`, true);
+                } else {
+                    // First sync - save data to server
+                    localStorage.setItem('scapcb-server-data', JSON.stringify(interventions));
+                    showSyncStatus("Données initiales sauvegardées sur le serveur", true);
+                }
+            } catch (error) {
+                console.error("Erreur de synchronisation:", error);
+                showSyncStatus("Échec de synchronisation", false);
+            } finally {
+                setTimeout(() => {
+                    syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Synchroniser';
+                }, 1000);
+            }
         });
         
         // Handle page reload - force logout
@@ -1517,23 +1694,6 @@
                 statusEl.remove();
             }, 3000);
         }
-        
-        // Sync button functionality
-        syncBtn.addEventListener('click', async () => {
-            syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronisation...';
-            try {
-                // Simulate synchronization
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                showSyncStatus("Données synchronisées avec succès", true);
-            } catch (error) {
-                console.error("Erreur de synchronisation:", error);
-                showSyncStatus("Échec de synchronisation", false);
-            } finally {
-                setTimeout(() => {
-                    syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Synchroniser';
-                }, 1000);
-            }
-        });
     </script>
 </body>
 </html>
