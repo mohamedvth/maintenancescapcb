@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCAPCB - Système Industriel de Maintenance</title>
+    <title>SCAPCB - Système de Gestion de Maintenance</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -22,8 +22,8 @@
             position: relative;
             overflow-x: hidden;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 30, 30, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(255, 30, 30, 0.05) 0%, transparent 20%);
+                radial-gradient(circle at 10% 20%, rgba(255, 204, 0, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 119, 255, 0.05) 0%, transparent 20%);
         }
         
         /* Industrial texture overlay */
@@ -36,7 +36,7 @@
             height: 100%;
             background-image: 
                 linear-gradient(rgba(20, 20, 20, 0.8), rgba(10, 10, 10, 0.9)),
-                url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ff3333' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+                url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffcc00' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
             background-size: cover;
             z-index: -1;
         }
@@ -62,16 +62,16 @@
             border-radius: 15px;
             width: 100%;
             max-width: 500px;
-            box-shadow: 0 0 30px rgba(255, 30, 30, 0.4);
-            border: 2px solid #ff3333;
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.4);
+            border: 2px solid #ffcc00;
             text-align: center;
         }
         
         .login-title {
             font-size: 2.5rem;
             margin-bottom: 30px;
-            color: #ff3333;
-            text-shadow: 0 0 10px rgba(255, 30, 30, 0.7);
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
             font-weight: 800;
             letter-spacing: 1px;
         }
@@ -99,17 +99,17 @@
             color: white;
             font-size: 1.1rem;
             border: 1px solid #444;
-            box-shadow: 0 0 10px rgba(255, 30, 30, 0.2);
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
         }
         
         .login-input-group input:focus {
-            outline: 2px solid #ff3333;
-            box-shadow: 0 0 15px rgba(255, 30, 30, 0.4);
+            outline: 2px solid #ffcc00;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
         }
         
         .login-btn {
-            background: linear-gradient(to right, #ff3333, #cc0000);
-            color: white;
+            background: linear-gradient(to right, #ffcc00, #ff9900);
+            color: #222;
             font-weight: 700;
             padding: 15px;
             border: none;
@@ -121,11 +121,11 @@
             margin-top: 10px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            box-shadow: 0 4px 10px rgba(255, 30, 30, 0.3);
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.3);
         }
         
         .login-btn:hover {
-            background: linear-gradient(to right, #cc0000, #990000);
+            background: linear-gradient(to right, #ff9900, #cc7a00);
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
         }
@@ -147,7 +147,7 @@
             position: relative;
             overflow: hidden;
             border: 1px solid #333;
-            border-bottom: 3px solid #ff3333;
+            border-bottom: 3px solid #ffcc00;
         }
         
         .logo {
@@ -160,14 +160,14 @@
         .logo-circle {
             width: 90px;
             height: 90px;
-            background: linear-gradient(45deg, #ff3333, #cc0000);
+            background: linear-gradient(45deg, #0077ff, #0055cc);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-right: 15px;
-            box-shadow: 0 0 25px rgba(255, 30, 30, 0.6);
-            border: 3px solid #ff3333;
+            box-shadow: 0 0 25px rgba(0, 119, 255, 0.6);
+            border: 3px solid #0077ff;
             position: relative;
             overflow: hidden;
         }
@@ -185,8 +185,8 @@
             font-weight: 900;
             letter-spacing: 3px;
             color: #fff;
-            text-shadow: 0 0 15px rgba(255, 30, 30, 0.8);
-            background: linear-gradient(to right, #ff3333, #cc0000);
+            text-shadow: 0 0 15px rgba(0, 119, 255, 0.8);
+            background: linear-gradient(to right, #ffcc00, #ff9900);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -210,8 +210,8 @@
         }
         
         .export-btn {
-            background: linear-gradient(to right, #cc0000, #990000);
-            color: white;
+            background: linear-gradient(to right, #ffcc00, #ff9900);
+            color: #222;
             font-weight: 700;
             padding: 12px 25px;
             border-radius: 8px;
@@ -223,12 +223,12 @@
             gap: 10px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            border: 1px solid #ff3333;
+            border: 1px solid #ffcc00;
         }
         
         .import-btn {
-            background: linear-gradient(to right, #cc0000, #990000);
-            color: white;
+            background: linear-gradient(to right, #ffcc00, #ff9900);
+            color: #222;
             font-weight: 700;
             padding: 12px 25px;
             border-radius: 8px;
@@ -240,12 +240,12 @@
             gap: 10px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            border: 1px solid #ff3333;
+            border: 1px solid #ffcc00;
         }
         
         .toggle-btn {
             background: linear-gradient(to right, #333, #222);
-            color: #ff3333;
+            color: #ffcc00;
             font-weight: 700;
             padding: 12px 25px;
             border-radius: 8px;
@@ -261,8 +261,8 @@
         }
         
         .logout-btn {
-            background: linear-gradient(to right, #ff3333, #cc0000);
-            color: white;
+            background: linear-gradient(to right, #ffcc00, #ff9900);
+            color: #222;
             font-weight: 700;
             padding: 12px 25px;
             border-radius: 8px;
@@ -274,11 +274,11 @@
             gap: 10px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            border: 1px solid #ff3333;
+            border: 1px solid #ffcc00;
         }
         
         .sync-btn {
-            background: linear-gradient(to right, #990000, #660000);
+            background: linear-gradient(to right, #0077ff, #0055cc);
             color: white;
             font-weight: 700;
             padding: 12px 25px;
@@ -291,7 +291,7 @@
             gap: 10px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            border: 1px solid #ff3333;
+            border: 1px solid #0077ff;
         }
         
         .export-btn:hover, .import-btn:hover, .toggle-btn:hover, .logout-btn:hover, .sync-btn:hover {
@@ -300,24 +300,24 @@
         }
         
         .export-btn:hover {
-            background: linear-gradient(to right, #990000, #660000);
+            background: linear-gradient(to right, #ff9900, #cc7a00);
         }
         
         .import-btn:hover {
-            background: linear-gradient(to right, #990000, #660000);
+            background: linear-gradient(to right, #ff9900, #cc7a00);
         }
         
         .toggle-btn:hover {
             background: linear-gradient(to right, #222, #111);
-            color: #ff3333;
+            color: #ffcc00;
         }
         
         .logout-btn:hover {
-            background: linear-gradient(to right, #cc0000, #990000);
+            background: linear-gradient(to right, #ff9900, #cc7a00);
         }
         
         .sync-btn:hover {
-            background: linear-gradient(to right, #660000, #440000);
+            background: linear-gradient(to right, #0055cc, #003399);
         }
         
         .main-content {
@@ -333,14 +333,14 @@
             padding: 25px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
             border: 1px solid #333;
-            border-top: 3px solid #ff3333;
+            border-top: 3px solid #ffcc00;
         }
         
         .section-title {
             font-size: 1.6rem;
             margin-bottom: 25px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #ff3333;
+            border-bottom: 2px solid #ffcc00;
             color: #ddd;
             display: flex;
             align-items: center;
@@ -350,7 +350,7 @@
         
         .section-title i {
             margin-right: 12px;
-            color: #ff3333;
+            color: #ffcc00;
         }
         
         .form-group {
@@ -382,14 +382,14 @@
         }
         
         input:focus, select:focus, textarea:focus {
-            outline: 2px solid #ff3333;
+            outline: 2px solid #ffcc00;
             background: rgba(40, 40, 40, 0.95);
-            box-shadow: 0 0 10px rgba(255, 30, 30, 0.3);
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
         }
         
         button {
-            background: linear-gradient(to right, #ff3333, #cc0000);
-            color: white;
+            background: linear-gradient(to right, #ffcc00, #ff9900);
+            color: #222;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -398,11 +398,11 @@
             letter-spacing: 0.5px;
             text-transform: uppercase;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            border: 1px solid #ff3333;
+            border: 1px solid #ffcc00;
         }
         
         button:hover {
-            background: linear-gradient(to right, #cc0000, #990000);
+            background: linear-gradient(to right, #ff9900, #cc7a00);
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
         }
@@ -426,7 +426,7 @@
             background: rgba(35, 35, 35, 0.9);
             margin-bottom: 8px;
             border-radius: 6px;
-            border-left: 3px solid #ff3333;
+            border-left: 3px solid #ffcc00;
         }
         
         .equipment-item:last-child {
@@ -435,8 +435,8 @@
         }
         
         .remove-equipment {
-            background: #ff3333;
-            color: white;
+            background: #ffcc00;
+            color: #222;
             border: none;
             border-radius: 5px;
             padding: 6px 12px;
@@ -446,7 +446,7 @@
         }
         
         .remove-equipment:hover {
-            background: #cc0000;
+            background: #ff9900;
         }
         
         .intervention-list {
@@ -458,7 +458,7 @@
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
-            border-left: 5px solid #ff3333;
+            border-left: 5px solid #0077ff;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s ease;
             border-top: 1px solid #333;
@@ -472,7 +472,7 @@
             left: 0;
             width: 100%;
             height: 5px;
-            background: linear-gradient(to right, #ff3333, #cc0000);
+            background: linear-gradient(to right, #0077ff, #0055cc);
         }
         
         .intervention-card:hover {
@@ -500,11 +500,11 @@
             font-weight: 700;
         }
         
-        .electrique { background: #ff3333; }
-        .mecanique { background: #cc0000; }
-        .servise-general { background: #990000; }
-        .preventif { background: #ff9900; color: #222; }
-        .corective { background: #ff3333; }
+        .electrique { background: #0077ff; }
+        .mecanique { background: #ffcc00; color: #222; }
+        .servise-general { background: #00cc77; }
+        .preventif { background: #ffcc00; color: #222; }
+        .corective { background: #0077ff; }
         .annule { background: #666; }
         
         .intervention-details {
@@ -536,12 +536,12 @@
             padding: 15px;
             background: rgba(30, 30, 30, 0.8);
             border-radius: 8px;
-            border-left: 3px solid #ff3333;
+            border-left: 3px solid #ffcc00;
         }
         
         .description-label {
             font-weight: 600;
-            color: #ff3333;
+            color: #ffcc00;
             margin-bottom: 8px;
         }
         
@@ -553,14 +553,14 @@
         
         .equipment-tag {
             display: inline-block;
-            background: rgba(255, 51, 51, 0.2);
-            color: #ff3333;
+            background: rgba(0, 119, 255, 0.2);
+            color: #0077ff;
             padding: 6px 15px;
             border-radius: 30px;
             margin: 6px 6px 6px 0;
             font-size: 0.95rem;
             font-weight: 500;
-            border: 1px solid rgba(255, 51, 51, 0.4);
+            border: 1px solid rgba(0, 119, 255, 0.4);
         }
         
         .card-footer {
@@ -573,8 +573,8 @@
         }
         
         .delete-intervention, .edit-intervention {
-            background: #ff3333;
-            color: white;
+            background: #ffcc00;
+            color: #222;
             border: none;
             border-radius: 6px;
             padding: 10px 18px;
@@ -587,16 +587,17 @@
         }
         
         .edit-intervention {
-            background: #666;
+            background: #0077ff;
+            color: white;
         }
         
         .delete-intervention:hover {
-            background: #cc0000;
+            background: #ff9900;
             transform: translateY(-2px);
         }
         
         .edit-intervention:hover {
-            background: #555;
+            background: #0055cc;
             transform: translateY(-2px);
         }
         
@@ -614,11 +615,11 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(15, 15, 15, 0.95);
             border-radius: 10px;
-            border-top: 3px solid #ff3333;
+            border-top: 3px solid #ffcc00;
         }
         
         .copyright {
-            color: #ff3333;
+            color: #ffcc00;
             font-weight: 700;
             font-size: 1.1rem;
         }
@@ -631,7 +632,7 @@
             background: rgba(20, 20, 20, 0.95);
             border-radius: 8px;
             border: 1px solid #333;
-            border-top: 3px solid #ff3333;
+            border-top: 3px solid #0077ff;
         }
         
         .stat-card {
@@ -653,15 +654,15 @@
             left: 0;
             width: 100%;
             height: 5px;
-            background: linear-gradient(to right, #ff3333, #cc0000);
+            background: linear-gradient(to right, #ffcc00, #ff9900);
         }
         
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
-            color: #ff3333;
+            color: #ffcc00;
             margin: 10px 0;
-            text-shadow: 0 0 10px rgba(255, 30, 30, 0.3);
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
         }
         
         .stat-label {
@@ -684,8 +685,8 @@
             height: 10px;
             background: repeating-linear-gradient(
                 45deg,
-                #ff3333,
-                #ff3333 10px,
+                #ffcc00,
+                #ffcc00 10px,
                 #000 10px,
                 #000 20px
             );
@@ -747,7 +748,7 @@
             gap: 10px;
             z-index: 1000;
             border: 1px solid #333;
-            border-left: 5px solid #ff3333;
+            border-left: 5px solid #ffcc00;
         }
         
         .sync-success {
@@ -765,9 +766,9 @@
             font-weight: 600;
         }
         
-        .status-planned { background: #ff3333; }
-        .status-in-progress { background: #ff9900; color: #222; }
-        .status-completed { background: #2ecc71; }
+        .status-planned { background: #ffcc00; color: #222; }
+        .status-in-progress { background: #0077ff; }
+        .status-completed { background: #00cc77; }
         .status-canceled { background: #666; }
         
         .filter-bar {
@@ -783,8 +784,8 @@
         }
         
         .priority-high { border-left: 5px solid #ff3333; }
-        .priority-medium { border-left: 5px solid #ff9900; }
-        .priority-low { border-left: 5px solid #666; }
+        .priority-medium { border-left: 5px solid #ffcc00; }
+        .priority-low { border-left: 5px solid #0077ff; }
         
         .action-buttons {
             display: flex;
@@ -797,7 +798,7 @@
         }
         
         .update-btn {
-            background: linear-gradient(to right, #cc0000, #990000) !important;
+            background: linear-gradient(to right, #ff9900, #cc7a00) !important;
         }
         
         .file-input-container {
@@ -817,13 +818,13 @@
         }
         
         .device-badge {
-            background: rgba(255, 51, 51, 0.2);
-            color: #ff3333;
+            background: rgba(0, 119, 255, 0.2);
+            color: #0077ff;
             padding: 3px 8px;
             border-radius: 12px;
             font-size: 0.8rem;
             margin-left: 8px;
-            border: 1px solid rgba(255, 51, 51, 0.5);
+            border: 1px solid rgba(0, 119, 255, 0.5);
         }
         
         /* Industrial elements */
@@ -865,6 +866,18 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.5);
         }
+        
+        .phare-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 119, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 30px;
+            font-weight: 600;
+            color: #0077ff;
+            border: 1px solid rgba(0, 119, 255, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -877,7 +890,7 @@
                 </div>
                 <div class="logo-text">SCAPCB</div>
             </div>
-            <h2 class="login-title">Accès Administrateur</h2>
+            <h2 class="login-title">Le Phare de Cap Bon</h2>
             <div class="login-input-group">
                 <label for="username"><i class="fas fa-user"></i> Nom d'utilisateur</label>
                 <input type="text" id="username" placeholder="Entrez votre nom d'utilisateur" autocomplete="off">
@@ -1086,7 +1099,7 @@
                 
                 <div class="intervention-list" id="interventionList">
                     <div class="no-interventions">
-                        <i class="fas fa-industry" style="font-size: 3rem; margin-bottom: 20px; color: #ff3333;"></i>
+                        <i class="fas fa-industry" style="font-size: 3rem; margin-bottom: 20px; color: #ffcc00;"></i>
                         <p>Aucune intervention enregistrée</p>
                         <p>Commencez par ajouter une nouvelle intervention</p>
                     </div>
@@ -1096,13 +1109,13 @@
         
         <footer>
             <p>Système Industriel de Gestion de Maintenance &copy; <span class="copyright">HAMADA 2025</span></p>
-            <p>SCAPCB - Tous droits réservés | Version 4.0 | <span id="sessionStatus">Session sécurisée</span></p>
+            <p>SCAPCB - Le Phare de Cap Bon | Tous droits réservés | Version 4.0 | <span id="sessionStatus">Session sécurisée</span></p>
         </footer>
     </div>
 
     <script>
         // Login credentials
-        const ADMIN_USERNAME = "admin5513090807";
+        const ADMIN_USERNAME = "admin";
         const ADMIN_PASSWORD = "5513090807**Aa";
         
         // Configuration
@@ -1521,7 +1534,7 @@
             }
             
             if (filteredInterventions.length === 0) {
-                interventionListEl.innerHTML = '<div class="no-interventions"><i class="fas fa-industry" style="font-size: 3rem; margin-bottom: 20px; color: #ff3333;"></i><p>Aucune intervention correspondant aux critères</p></div>';
+                interventionListEl.innerHTML = '<div class="no-interventions"><i class="fas fa-industry" style="font-size: 3rem; margin-bottom: 20px; color: #ffcc00;"></i><p>Aucune intervention correspondant aux critères</p></div>';
                 return;
             }
             
