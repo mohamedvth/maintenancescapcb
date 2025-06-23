@@ -1,5 +1,5 @@
 // storage.js
-const API_URL = 'https://jsonplaceholder.typicode.com';
+const API_URL = 'https://mohamedvth.github.io/scapcbmaintenancehamada/'
 
 class PublicStorage {
     constructor() {
