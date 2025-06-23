@@ -1,27 +1,20 @@
-// Sauvegarde les interventions et nextId dans le localStorage
-function saveInterventionsToStorage(interventions, nextId) {
-    const data = { interventions, nextId };
-    localStorage.setItem('scapcb-data', JSON.stringify(data));
+// Sauvegarder les interventions dans le navigateur
+function saveInterventions(interventions) {
+    localStorage.setItem('scapcb-interventions', JSON.stringify(interventions));
 }
 
-// Charge les interventions et nextId depuis le localStorage
-function loadInterventionsFromStorage() {
-    const stored = localStorage.getItem('scapcb-data');
-    if (stored) {
-        try {
-            const parsed = JSON.parse(stored);
-            return {
-                interventions: Array.isArray(parsed.interventions) ? parsed.interventions : [],
-                nextId: typeof parsed.nextId === 'number' ? parsed.nextId : 1
-            };
-        } catch {
-            return { interventions: [], nextId: 1 };
-        }
-    }
-    return { interventions: [], nextId: 1 };
+// Charger les interventions depuis le navigateur
+function loadInterventions() {
+    const data = localStorage.getItem('scapcb-interventions');
+    return data ? JSON.parse(data) : [];
 }
 
-// Efface toutes les données d'interventions du localStorage
-function clearInterventionsStorage() {
-    localStorage.removeItem('scapcb-data');
+// Effacer toutes les interventions
+function clearInterventions() {
+    localStorage.removeItem('scapcb-interventions');
 }
+
+// Exemple d'utilisation :
+// let interventions = loadInterventions();
+// interventions.push({ id: 1, titre: "Nouvelle intervention", ... });
+// saveInterventions(interventions);
